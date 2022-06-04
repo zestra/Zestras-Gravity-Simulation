@@ -1,5 +1,6 @@
 import pygame, pgzero, pgzrun
 import math
+import time
 
 # Initial set up
 
@@ -21,6 +22,10 @@ PALE_BLUE = (0, 35, 135)
 DARK_GREY = (50, 50, 50)
 DARKER_GREY = (10, 10, 10)
 
+colors = [images.ball, images.ball2, images.ball3, images.ball4, images.ball5, images.ball6]
+color_index = 0
+color_ball = colors[color_index]
+
 # size
 WIDTH = 1920
 HEIGHT = 1050
@@ -34,6 +39,13 @@ cannon = Actor("head", center=(-600 + top_left_x, 250 + top_left_y))
 # MORE
 
 show_options = False
+show_info = False
+
+comment = ""
+timer_comment = 0
+
+force = 20
+
 
 ######
 # SIMULATION FUNCTIONS
@@ -41,11 +53,12 @@ show_options = False
 
 
 class Ball:
-    def __init__(self, name, angle, a_y, a_x, v_y, v_x, ball_y, ball_x):
+    def __init__(self, name, image, angle, a_y, a_x, v_y, v_x, ball_y, ball_x):
         self.name = name
+        self.image = image
 
         # ANGLE
-        self.angle = angle - 20
+        self.angle = angle + 20
 
         # ACCELERATION
         self.a_y = a_y
@@ -60,7 +73,7 @@ class Ball:
         self.ball_x = ball_x
 
         # PRESERVED CONSTANTS
-        self.constant_angle = angle - 20
+        self.constant_angle = self.angle + 20
 
         self.constant_a_y = a_y
         self.constant_a_x = a_x
@@ -109,17 +122,17 @@ class Ball:
         if self.show_variables:
             draw_rect(0, 0, 700, 500, PALE_BLUE, None)
             draw_rect(0, -200, 700, 125, DARK_BLUE, None)
-            show_text("VARIABLES", -145, -220, 0, 0, WHITE, 75)
-            show_text(f"Acceleration along y-axis: a_y = {int(self.a_y)}", -280, -120, 0, 0, WHITE, 25)
-            show_text(f"Acceleration along x-axis: a_x = {int(self.a_x)}", -280, -90, 0, 0, WHITE, 25)
-            show_text(f"Velocity along y-axis: v_y = {-int(self.v_y)}", -280, -60, 0, 0, WHITE, 25)
-            show_text(f"Velocity along x-axis: v_x = {int(self.v_x)}", -280, -30, 0, 0, WHITE, 25)
-            show_text(f"Position along y-axis: ball_y = {int(self.ball_y)}", -280, 0, 0, 0, WHITE, 25)
-            show_text(f"Position along x-axis: ball_x = {int(self.ball_x)}", -280, 30, 0, 0, WHITE, 25)
-            show_text(f"Angle of Ball: angle = {int(self.angle + 20)}", -280, 60, 0, 0, WHITE, 25)
+            show_text("VARIABLES", -145, -220, WHITE, 75)
+            show_text(f"Acceleration along y-axis: a_y = {int(self.a_y)}", -280, -120, WHITE, 25)
+            show_text(f"Acceleration along x-axis: a_x = {int(self.a_x)}", -280, -90, WHITE, 25)
+            show_text(f"Velocity along y-axis: v_y = {-int(self.v_y)}", -280, -60, WHITE, 25)
+            show_text(f"Velocity along x-axis: v_x = {int(self.v_x)}", -280, -30, WHITE, 25)
+            show_text(f"Position along y-axis: ball_y = {int(self.ball_y)}", -280, 0, WHITE, 25)
+            show_text(f"Position along x-axis: ball_x = {int(self.ball_x)}", -280, 30, WHITE, 25)
+            show_text(f"Angle of Ball: angle = {int(self.angle + 20)}", -280, 60, WHITE, 25)
 
     def check_controls(self):
-        global balls, index
+        global balls, index, active_ball
 
         if keyboard.k_1:  # Toggle View Path on screen
             if self.show_path:
@@ -157,6 +170,7 @@ class Ball:
             if len(balls) > 1:
                 balls.remove(active_ball)
                 index -= 1
+                active_ball = balls[index]
 
         if keyboard.up:
             self.angle += 1
@@ -171,17 +185,21 @@ class Ball:
         if self.show_path:
             self.draw_points()
 
-        draw_image(images.ball, self.ball_x, self.ball_y)
-        show_text(self.name, self.ball_x, self.ball_y - 25, 0, 0, WHITE, 25)
+        draw_image(self.image, self.ball_x, self.ball_y)
+        show_text(self.name, self.ball_x, self.ball_y - 25, WHITE, 25)
 
 
 #######
 # DISPLAY FUNCTIONS
 #######
 
-balls = [Ball(f"ball {0}", cannon.angle, 0.5, 0, -20, 20, 250, -600)]
+balls = [Ball(f"ball {0}", color_ball, cannon.angle, 0.5, 0, -20, 20, 250, -600)]
 active_ball = balls[0]
 index = 0
+
+color_index += 1
+color_ball = colors[color_index]
+
 
 def draw():
     screen.clear()
@@ -197,50 +215,59 @@ def draw():
 
     display_main()
     display_options()
+    display_info()
 
     for ball in balls:
         ball.display_variables()
 
 
 def display_main():
-    draw_rect(575, -402.5, 360, 80, WHITE, None)
-    show_text("Activated Ball: " + active_ball.name, 420, -415, 0, 0, BLACK, 45)
-
-    # draw_rect(575, -440, 480, 70, WHITE, None)
-    # show_text(f"VELOCITY (x: {int(ball.v_x)}, y: {-int(ball.v_y)})", 390, -450, 0, 0, BLACK, 45)
-    # draw_rect(575, -360, 480, 70, WHITE, None)
-    # show_text(f"POSITION (x: {int(ball.ball_x)}, y: {-int(ball.ball_y)})", 390, -375, 0, 0, BLACK, 45)
-
     draw_rect(0, -400, 750, 150, DARK_BLUE, None)
-    show_text("GRAVITY SIMULATION 2", -275, -420, 0, 0, WHITE, 75)
+    show_text("GRAVITY SIMULATION 2", -275, -420, WHITE, 75)
+    draw_image(images.earth, -275, -312.5)
 
     draw_rect(0, 0, 1900, 1025, None, BLUE)
     draw_rect(0, 800, 1920, 950, PALE_BLUE, None)
 
     draw_rect(-650, -400, 375, 130, DARK_BLUE, None)
-    show_text("MENU", -742.5, -435, 0, 0, WHITE, 100)
-    show_text("Press key 0", -690, -370, 0, 0, WHITE, 25)
+    show_text("MENU", -742.5, -435, WHITE, 100)
+    show_text("Press key 0", -690, -370, WHITE, 25)
+
+    draw_rect(650, -400, 375, 130, DARK_BLUE, None)
+    show_text("INFO", 572.5, -435, WHITE, 100)
+    show_text("Press key 9", 610, -370, WHITE, 25)
+
+    if timer_comment != 0:
+        show_text(comment, -375, -305, WHITE, 35)
 
 
 def display_options():
     if show_options:
         draw_rect(-650, -80, 230, 500, PALE_BLUE, None)
-        show_text("Toggle Path: Press 1", -740, -310, 0, 0, WHITE, 25)
-        show_text("View Variables: Press 2", -740, -280, 0, 0, WHITE, 25)
-        show_text("Replay: Press 3", -740, -250, 0, 0, WHITE, 25)
-        show_text("Freeze Ball: Press 4", -740, -220, 0, 0, WHITE, 25)
-        show_text("Delete Ball: Press 5", -740, -190, 0, 0, WHITE, 25)
+        show_text("Toggle Path: Press 1", -740, -310, WHITE, 25)
+        show_text("View Variables: Press 2", -740, -280, WHITE, 25)
+        show_text("Replay: Press 3", -740, -250, WHITE, 25)
+        show_text("Freeze Ball: Press 4", -740, -220, WHITE, 25)
+        show_text("Delete Ball: Press 5", -740, -190, WHITE, 25)
 
         show_text("Change Angle: Press \n"
-                  "Up and Down", -740, -120, 0, 0, WHITE, 25)
+                  "Up and Down", -740, -120, WHITE, 25)
+        show_text("Change Force: Press \n"
+                  "6 and 7", -740, -70, WHITE, 25)
         show_text("Create Ball: Press \n"
-                  "Space", -740, -70, 0, 0, WHITE, 25)
+                  "Space", -740, -20, WHITE, 25)
         show_text("Activate Ball: Press \n"
-                  "Right and Left", -740, -20, 0, 0, WHITE, 25)
+                  "Right and Left", -740, 30, WHITE, 25)
 
 
+def display_info():
+    if show_info:
+        draw_rect(650, -80, 230, 500, PALE_BLUE, None)
+        show_text("Activated Ball: " + active_ball.name, 560, -310, WHITE, 25)
+        show_text(f"Num of Balls: {len(balls)}", 560, -280, WHITE, 25)
 
-    pass
+        show_text(f"Force Measure: {force}", 560, -210, WHITE, 25)
+        show_text(f"Angle: {cannon.angle + 20}", 560, -180, WHITE, 25)
 
 
 def draw_image(image, x, y):
@@ -267,18 +294,20 @@ def draw_rect(x, y,
 
 
 def show_text(text_to_show, x, y,
-              offset_y=0, offset_x=0,
               colour=WHITE,
               size=75):
     screen.draw.text(text_to_show,
-                     (top_left_x + x + offset_x, top_left_y + y + offset_y),
+                     (top_left_x + x, top_left_y + y),
                      fontsize=size, color=colour)
 
 
 def check():
-    global show_options
+    global show_options, show_info
     global index, active_ball
     global balls
+    global force
+    global comment, timer_comment
+    global color_ball, color_index
 
     if keyboard.k_0:
         if show_options:
@@ -286,13 +315,41 @@ def check():
         else:
             show_options = True
 
+    if keyboard.k_9:
+        if show_info:
+            show_info = False
+        else:
+            show_info = True
+
     if keyboard.up:
-        cannon.angle += 1
+        if (cannon.angle + 20) < 70:
+            cannon.angle += 1
+        else:
+            comment = "Cannot turn angle more than 70 degrees. \n" \
+                      "Your Friendly Commenter \n" \
+                      ";)"
+            timer_comment = 1
+
     elif keyboard.down:
-        cannon.angle -= 1
+        if (cannon.angle + 20) > 5:
+            cannon.angle -= 1
+        else:
+            comment = "Cannot turn angle less than 5 degrees. \n" \
+                      "Your Friendly Commenter \n" \
+                      ";)"
+            timer_comment = 1
+
+    if keyboard.k_7:
+        if force < 50:
+            force += 1
+    elif keyboard.k_6:
+        if force > 20:
+            force -= 1
 
     if keyboard.right:
         clock.unschedule(active_ball.check_controls)
+
+        active_ball.show_variables = False
 
         if index == len(balls) - 1:
             index = 0
@@ -305,6 +362,8 @@ def check():
     elif keyboard.left:
         clock.unschedule(active_ball.check_controls)
 
+        active_ball.show_variables = False
+
         if index == 0:
             index = len(balls) - 1
         else:
@@ -314,19 +373,37 @@ def check():
         clock.schedule_interval(active_ball.check_controls, 0.075)
 
     if keyboard.SPACE:
-        clock.unschedule(active_ball.check_controls)
+        if len(balls) < 15:
+            clock.unschedule(active_ball.check_controls)
 
-        balls.append(Ball(f"ball {len(balls)}", cannon.angle, 0.5, 0, -20, 20, 250, -600))
-        active_ball = balls[len(balls) - 1]
+            balls.append(Ball(f"ball {len(balls)}", color_ball, cannon.angle, 0.5, 0, -force, force, 250, -600))
+            active_ball = balls[len(balls) - 1]
 
-        clock.schedule_interval(active_ball.check_controls, 0.075)
+            color_index += 1
+            if color_index == len(colors):
+                color_index = 0
+            color_ball = colors[color_index]
 
+            clock.schedule_interval(active_ball.check_controls, 0.075)
+        else:
+            comment = " Cannot contain more than 15 balls at a time." \
+                      "\n To make some space, delete some of the balls by pressing key 5." \
+                      "\n Your Friendly Commenter" \
+                      "\n ;)"
+            timer_comment = 1
 
+    if timer_comment != 0:
+        timer_comment += 1
+        if timer_comment == 35:
+            timer_comment = 0
 
 
 #####
 # RUN FUNCTIONS
 #####
+
+comment = "Welcome to Gravity Simulation 2nd!"
+timer_comment = 1
 
 for ball in balls:
     if ball.name == active_ball.name:
