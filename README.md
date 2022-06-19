@@ -1,4 +1,4 @@
-# Interactive-Science-Simulations
+# Zestras-Gravity-Simulation
 This repository contains a (hopefully) fun and interactive gravity simulation.
 
 # Gravity Simulation 2nd Screenshot
